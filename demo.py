@@ -41,7 +41,10 @@ def underwater_dynamics(t,state,tau, params):
 
     # velocities in body frame
     u,v,w = state[6:9]
-    p,q,r = state[9:]
+    p,q,r = state[9:12]
+
+    # paws positions
+    P = state[12:]
 
     # Inertial params + buoyancy
     g,m,W,Ix,Iy,Iz,B = params[0]
@@ -103,12 +106,31 @@ def underwater_dynamics(t,state,tau, params):
     g_torque = np.zeros(3)
     g_vector = np.concatenate((g_force,g_torque))
 
-    q_dot = np.linalg.inv(M)@(tau-g_vector-(D+C)@state[6:])
-    x_dot = J@state[6:]
+    p1 = P[0:3]
+    p2 = P[3:6]
+    p3 = P[6:9]
+    p4 = P[9:]
+
+    I = np.eye(3)
+    S1 = skew_symmetric_matrix(p1)
+    S2 = skew_symmetric_matrix(p2)
+    S3 = skew_symmetric_matrix(p3)
+    S4 = skew_symmetric_matrix(p4)
+
+    B = np.block([[I,I,I,I],[S1,S2,S3,S4]])
+
+    F = np.linalg.pinv(B)@tau
+    print(f'{F.reshape((-1,1))}\n\n')
+
+    # q_dot = linear and angular accelerations in body frame
+    # x_dot = xyz velocities and rpy rates
+    q_dot = np.linalg.inv(M)@(B@F-g_vector-(D+C)@state[6:12])
+    x_dot = J@state[6:12]
+    P_dot = -F
 
     #print(f'{C_a}')
 
-    return np.concatenate((x_dot, q_dot))
+    return np.concatenate((x_dot, q_dot, P_dot))
 
 def simulate_dynamics(t_span, initial_state, tau, params):
     sol = solve_ivp(underwater_dynamics, t_span, initial_state, args=(tau, params), method='RK45',t_eval=np.linspace(*t_span,100))
@@ -145,8 +167,14 @@ if __name__ == "__main__":
 
     params = np.array([inertial_params, added_mass_params, damping_coeffs], dtype=object)
 
+    # Initial paws config in body frame
+    p1 = np.array([1,1,-0.5])
+    p2 = np.array([1,-1,-0.5])
+    p3 = np.array([-1,-1,-0.5])
+    p4 = np.array([-1,1,-0.5])
+
     t_span = (0,1)
-    initial_state = np.zeros(12)
+    initial_state = np.concatenate((np.zeros(12),p1,p2,p3,p4))
     tau = np.zeros(6)
     tau[3] = 5
 
