@@ -95,11 +95,11 @@ def underwater_dynamics(t,state,tau, params):
     # Body angular velocity to rpy_dot transformation matrix
     T = omega_to_rpy_dot_matrix(phi,theta)
 
-    # Body to NED transformation matrix
+    # Body velocities to xyz-rpy derivatives transformation matrix
     J = block_diag(R,T)
 
+    # Gravity and buoyancy (assuming CoB = origin of body frame, so no torque in induced)
     g_force = R.T @ np.array([0,0,B-W])
-
     g_torque = np.zeros(3)
     g_vector = np.concatenate((g_force,g_torque))
 
