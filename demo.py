@@ -99,7 +99,7 @@ def underwater_dynamics(t,state,tau, params):
     J = block_diag(R,T)
 
     # Gravity and buoyancy (assuming CoB = origin of body frame, so no torque in induced)
-    g_force = R.T @ np.array([0,0,B-W])
+    g_force = R.T @ np.array([0,0,W-B])
     g_torque = np.zeros(3)
     g_vector = np.concatenate((g_force,g_torque))
 
@@ -114,95 +114,96 @@ def simulate_dynamics(t_span, initial_state, tau, params):
     sol = solve_ivp(underwater_dynamics, t_span, initial_state, args=(tau, params), method='RK45',t_eval=np.linspace(*t_span,100))
     return sol
 
-# Inertial parameters
-g = 9.81
-m = 11.5
-W = m*g 
-Ix = 0.16
-Iy = 0.16
-Iz = 0.20
-B = W
-inertial_params = np.array([g,m,W,Ix,Iy,Iz,B])
+if __name__ == "__main__":
+    # Inertial parameters
+    g = 9.81
+    m = 11.5
+    W = m*g 
+    Ix = 0.16
+    Iy = 0.16
+    Iz = 0.20
+    B = W
+    inertial_params = np.array([g,m,W,Ix,Iy,Iz,B])
 
-# Added mass parameters
-X_udot = 5.5
-Y_vdot = 5.5
-Z_wdot = 1
-K_pdot = 0.12
-M_qdot = 0.12
-N_rdot = 0.12
-added_mass_params = np.array([X_udot,Y_vdot,Z_wdot,K_pdot,M_qdot,N_rdot])
+    # Added mass parameters
+    X_udot = 5.5
+    Y_vdot = 5.5
+    Z_wdot = 1
+    K_pdot = 0.12
+    M_qdot = 0.12
+    N_rdot = 0.12
+    added_mass_params = np.array([X_udot,Y_vdot,Z_wdot,K_pdot,M_qdot,N_rdot])
 
-# Damping coefficients
-Xu = -4.03
-Yv = -6.22
-Zw = -5.18
-Kp = -0.07
-Mq = -0.07
-Nr = -0.07
-damping_coeffs = np.array([Xu,Yv,Zw,Kp,Mq,Nr])
+    # Damping coefficients
+    Xu = -4.03
+    Yv = -6.22
+    Zw = -5.18
+    Kp = -0.07
+    Mq = -0.07
+    Nr = -0.07
+    damping_coeffs = np.array([Xu,Yv,Zw,Kp,Mq,Nr])
 
-params = np.array([inertial_params, added_mass_params, damping_coeffs], dtype=object)
+    params = np.array([inertial_params, added_mass_params, damping_coeffs], dtype=object)
 
-t_span = (0,1)
-initial_state = np.zeros(12)
-tau = np.zeros(6)
-tau[2] = 5
+    t_span = (0,1)
+    initial_state = np.zeros(12)
+    tau = np.zeros(6)
+    tau[3] = 5
 
-sol = simulate_dynamics(t_span, initial_state, tau, params)
+    sol = simulate_dynamics(t_span, initial_state, tau, params)
 
-# Extract time and state variables
-t = sol.t
-state = sol.y
+    # Extract time and state variables
+    t = sol.t
+    state = sol.y
 
-# Extract individual state components
-x, y, z = state[0, :], state[1, :], state[2, :]
-phi, theta, psi = state[3, :], state[4, :], state[5, :]
-u, v, w = state[6, :], state[7, :], state[8, :]
-p, q, r = state[9, :], state[10, :], state[11, :]
+    # Extract individual state components
+    x, y, z = state[0, :], state[1, :], state[2, :]
+    phi, theta, psi = state[3, :], state[4, :], state[5, :]
+    u, v, w = state[6, :], state[7, :], state[8, :]
+    p, q, r = state[9, :], state[10, :], state[11, :]
 
-# #print(state[8,:])
+    # #print(state[8,:])
 
-# Plot position
-plt.figure(figsize=(12, 6))
-plt.subplot(2, 3, 1)
-plt.plot(t, x, label='x')
-plt.plot(t, y, label='y')
-plt.plot(t, z, label='z')
-plt.xlabel('Time (s)')
-plt.ylabel('Position (m)')
-plt.legend()
-plt.title('Position vs Time')
+    # Plot position
+    plt.figure(figsize=(12, 6))
+    plt.subplot(2, 3, 1)
+    plt.plot(t, x, label='x')
+    plt.plot(t, y, label='y')
+    plt.plot(t, z, label='z')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Position (m)')
+    plt.legend()
+    plt.title('Position vs Time')
 
-# Plot orientation (Euler angles)
-plt.subplot(2, 3, 2)
-plt.plot(t, phi, label='phi')
-plt.plot(t, theta, label='theta')
-plt.plot(t, psi, label='psi')
-plt.xlabel('Time (s)')
-plt.ylabel('Orientation (rad)')
-plt.legend()
-plt.title('Orientation vs Time')
+    # Plot orientation (Euler angles)
+    plt.subplot(2, 3, 2)
+    plt.plot(t, phi, label='phi')
+    plt.plot(t, theta, label='theta')
+    plt.plot(t, psi, label='psi')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Orientation (rad)')
+    plt.legend()
+    plt.title('Orientation vs Time')
 
-# Plot linear velocity
-plt.subplot(2, 3, 3)
-plt.plot(t, u, label='u')
-plt.plot(t, v, label='v')
-plt.plot(t, w, label='w')
-plt.xlabel('Time (s)')
-plt.ylabel('Linear Velocity (m/s)')
-plt.legend()
-plt.title('Linear Velocity vs Time')
+    # Plot linear velocity
+    plt.subplot(2, 3, 3)
+    plt.plot(t, u, label='u')
+    plt.plot(t, v, label='v')
+    plt.plot(t, w, label='w')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Linear Velocity (m/s)')
+    plt.legend()
+    plt.title('Linear Velocity vs Time')
 
-# Plot angular velocity
-plt.subplot(2, 3, 4)
-plt.plot(t, p, label='p')
-plt.plot(t, q, label='q')
-plt.plot(t, r, label='r')
-plt.xlabel('Time (s)')
-plt.ylabel('Angular Velocity (rad/s)')
-plt.legend()
-plt.title('Angular Velocity vs Time')
+    # Plot angular velocity
+    plt.subplot(2, 3, 4)
+    plt.plot(t, p, label='p')
+    plt.plot(t, q, label='q')
+    plt.plot(t, r, label='r')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Angular Velocity (rad/s)')
+    plt.legend()
+    plt.title('Angular Velocity vs Time')
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
