@@ -1,8 +1,21 @@
 import math
 import numpy as np
+
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from mpl_toolkits.mplot3d import Axes3D
+
 from scipy.linalg import block_diag
 from scipy.integrate import solve_ivp
+
+# Function to update animation
+def update(frame, leg1, leg2, leg3, leg4, cog):
+    x = [cog[0,frame], leg1[0, frame], leg2[0, frame], leg3[0, frame], leg4[0, frame]]
+    y = [cog[1,frame], leg1[1, frame], leg2[1, frame], leg3[1, frame], leg4[1, frame]]
+    z = [cog[2,frame], leg1[2, frame], leg2[2, frame], leg3[2, frame], leg4[2, frame]]
+    
+    sc._offsets3d = (x, y, z)
+    return sc,
 
 def rpy_rotation_matrix(phi,theta,psi):
     Rx = np.array([[1, 0, 0],
@@ -276,4 +289,26 @@ if __name__ == "__main__":
     plt.title('Leg4 Position')
 
     plt.tight_layout()
+    plt.show()
+
+    # Create figure and 3D axis
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # axis limits 
+    ax.set_xlim([np.min(state[12:24, :]) - 0.1, np.max(state[12:24, :]) + 0.1])
+    ax.set_ylim([np.min(state[12:24, :]) - 0.1, np.max(state[12:24, :]) + 0.1])
+    ax.set_zlim([np.min(state[12:24, :]) - 0.1, np.max(state[12:24, :]) + 0.1])
+
+    # labels
+    ax.set_xlabel('X Position (m)')
+    ax.set_ylabel('Y Position (m)')
+    ax.set_zlabel('Z Position (m)')
+    ax.set_title('Leg End Effectors Animation')
+
+    # initialize scatter plot 
+    sc = ax.scatter(np.zeros(5), np.zeros(5), np.zeros(5), c=['k','r', 'g', 'b', 'm'], s=50)
+
+    ani = FuncAnimation(fig, update, frames=len(t), fargs=(leg1, leg2, leg3, leg4, np.array([x,y,z])), interval=50, blit=False)
+    
     plt.show()
