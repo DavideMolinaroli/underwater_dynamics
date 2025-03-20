@@ -143,17 +143,17 @@ if __name__ == "__main__":
     W = m*g 
     Ix = 0.16
     Iy = 0.16
-    Iz = 0.20
+    Iz = 0.16
     B = W
     inertial_params = np.array([g,m,W,Ix,Iy,Iz,B])
 
     # Added mass parameters
-    X_udot = 5.5
-    Y_vdot = 5.5
-    Z_wdot = 1
-    K_pdot = 0.12
-    M_qdot = 0.12
-    N_rdot = 0.12
+    X_udot = -5.5
+    Y_vdot = -12.7
+    Z_wdot = -14.57
+    K_pdot = -0.12
+    M_qdot = -0.12
+    N_rdot = -0.12
     added_mass_params = np.array([X_udot,Y_vdot,Z_wdot,K_pdot,M_qdot,N_rdot])
 
     # Damping coefficients
@@ -166,17 +166,16 @@ if __name__ == "__main__":
     damping_coeffs = np.array([Xu,Yv,Zw,Kp,Mq,Nr])
 
     params = np.array([inertial_params, added_mass_params, damping_coeffs], dtype=object)
-
+    
     # Initial paws config in body frame
     p1 = np.array([1,1,-0.5])
     p2 = np.array([1,-1,-0.5])
     p3 = np.array([-1,-1,-0.5])
     p4 = np.array([-1,1,-0.5])
-
-    t_span = (0,1)
+    t_span = (0,5)
     initial_state = np.concatenate((np.zeros(12),p1,p2,p3,p4))
     tau = np.zeros(6)
-    tau[3] = 5
+    tau[0] = 1
 
     sol = simulate_dynamics(t_span, initial_state, tau, params)
 
@@ -189,12 +188,18 @@ if __name__ == "__main__":
     phi, theta, psi = state[3, :], state[4, :], state[5, :]
     u, v, w = state[6, :], state[7, :], state[8, :]
     p, q, r = state[9, :], state[10, :], state[11, :]
+    leg1 = np.array([state[12,:],state[13,:],state[14,:]])
+    leg2 = np.array([state[15,:],state[16,:],state[17,:]])
+    leg3 = np.array([state[18,:],state[19,:],state[20,:]])
+    leg4 = np.array([state[21,:],state[22,:],state[23,:]])
 
     # #print(state[8,:])
 
+    # Create figure
+    plt.figure(figsize=(12, 10))
+
     # Plot position
-    plt.figure(figsize=(12, 6))
-    plt.subplot(2, 3, 1)
+    plt.subplot(3, 3, 1)
     plt.plot(t, x, label='x')
     plt.plot(t, y, label='y')
     plt.plot(t, z, label='z')
@@ -204,7 +209,7 @@ if __name__ == "__main__":
     plt.title('Position vs Time')
 
     # Plot orientation (Euler angles)
-    plt.subplot(2, 3, 2)
+    plt.subplot(3, 3, 2)
     plt.plot(t, phi, label='phi')
     plt.plot(t, theta, label='theta')
     plt.plot(t, psi, label='psi')
@@ -214,7 +219,7 @@ if __name__ == "__main__":
     plt.title('Orientation vs Time')
 
     # Plot linear velocity
-    plt.subplot(2, 3, 3)
+    plt.subplot(3, 3, 3)
     plt.plot(t, u, label='u')
     plt.plot(t, v, label='v')
     plt.plot(t, w, label='w')
@@ -224,7 +229,7 @@ if __name__ == "__main__":
     plt.title('Linear Velocity vs Time')
 
     # Plot angular velocity
-    plt.subplot(2, 3, 4)
+    plt.subplot(3, 3, 4)
     plt.plot(t, p, label='p')
     plt.plot(t, q, label='q')
     plt.plot(t, r, label='r')
@@ -232,6 +237,43 @@ if __name__ == "__main__":
     plt.ylabel('Angular Velocity (rad/s)')
     plt.legend()
     plt.title('Angular Velocity vs Time')
+
+    # Plot Leg positions
+    plt.subplot(3, 3, 5)
+    plt.plot(t, leg1[0,:], label='l1x')
+    plt.plot(t, leg1[1,:], label='l1y')
+    plt.plot(t, leg1[2,:], label='l1z')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Leg1 position')
+    plt.legend()
+    plt.title('Leg1 Position')
+
+    plt.subplot(3, 3, 6)
+    plt.plot(t, leg2[0,:], label='l2x')
+    plt.plot(t, leg2[1,:], label='l2y')
+    plt.plot(t, leg2[2,:], label='l2z')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Leg2 position')
+    plt.legend()
+    plt.title('Leg2 Position')
+
+    plt.subplot(3, 3, 7)
+    plt.plot(t, leg3[0,:], label='l3x')
+    plt.plot(t, leg3[1,:], label='l3y')
+    plt.plot(t, leg3[2,:], label='l3z')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Leg3 position')
+    plt.legend()
+    plt.title('Leg3 Position')
+
+    plt.subplot(3, 3, 8)
+    plt.plot(t, leg4[0,:], label='l4x')
+    plt.plot(t, leg4[1,:], label='l4y')
+    plt.plot(t, leg4[2,:], label='l4z')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Leg4 position')
+    plt.legend()
+    plt.title('Leg4 Position')
 
     plt.tight_layout()
     plt.show()
