@@ -4,18 +4,56 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 from scipy.linalg import block_diag
 from scipy.integrate import solve_ivp
 
-# Function to update animation
-def update(frame, leg1, leg2, leg3, leg4, cog):
-    x = [cog[0,frame], leg1[0, frame], leg2[0, frame], leg3[0, frame], leg4[0, frame]]
-    y = [cog[1,frame], leg1[1, frame], leg2[1, frame], leg3[1, frame], leg4[1, frame]]
-    z = [cog[2,frame], leg1[2, frame], leg2[2, frame], leg3[2, frame], leg4[2, frame]]
-    
+def get_cube_vertices():
+    """ Returns the 8 vertices of a unit cube centered at the origin. """
+    return np.array([
+        [-0.15, -0.15, -0.15],
+        [-0.15, -0.15,  0.15],
+        [-0.15,  0.15, -0.15],
+        [-0.15,  0.15,  0.15],
+        [ 0.15, -0.15, -0.15],
+        [ 0.15, -0.15,  0.15],
+        [ 0.15,  0.15, -0.15],
+        [ 0.15,  0.15,  0.15]
+    ]).T  # Shape (3,8)
+
+def get_cube_faces(vertices):
+    """ Returns faces of the cube given its 8 vertices. """
+    return [
+        [vertices[:, 0], vertices[:, 1], vertices[:, 3], vertices[:, 2]],
+        [vertices[:, 4], vertices[:, 5], vertices[:, 7], vertices[:, 6]],
+        [vertices[:, 0], vertices[:, 1], vertices[:, 5], vertices[:, 4]],
+        [vertices[:, 2], vertices[:, 3], vertices[:, 7], vertices[:, 6]],
+        [vertices[:, 0], vertices[:, 2], vertices[:, 6], vertices[:, 4]],
+        [vertices[:, 1], vertices[:, 3], vertices[:, 7], vertices[:, 5]]
+    ]
+
+# Function to update both animations
+def update(frame, cube, sc, state, leg1, leg2, leg3, leg4):
+    # Update scatter points
+    x = [state[0, frame], leg1[0, frame], leg2[0, frame], leg3[0, frame], leg4[0, frame]]
+    y = [state[1, frame], leg1[1, frame], leg2[1, frame], leg3[1, frame], leg4[1, frame]]
+    z = [state[2, frame], leg1[2, frame], leg2[2, frame], leg3[2, frame], leg4[2, frame]]
     sc._offsets3d = (x, y, z)
-    return sc,
+    
+    # Compute rotation matrix
+    phi, theta, psi = state[3, frame], state[4, frame], state[5, frame]
+    R = rpy_rotation_matrix(phi, theta, psi)
+    
+    # Transform cube vertices
+    vertices = (R @ get_cube_vertices())  # Apply rotation, shape (8,3)
+    vertices = vertices + state[:3, frame].reshape(3, 1) 
+    
+    # Update cube faces
+    faces = get_cube_faces(vertices)
+    cube.set_verts(faces)
+    
+    return cube, sc
 
 def rpy_rotation_matrix(phi,theta,psi):
     Rx = np.array([[1, 0, 0],
@@ -188,7 +226,7 @@ if __name__ == "__main__":
     t_span = (0,5)
     initial_state = np.concatenate((np.zeros(12),p1,p2,p3,p4))
     tau = np.zeros(6)
-    tau[0] = 1
+    tau[3] = 1
 
     sol = simulate_dynamics(t_span, initial_state, tau, params)
 
@@ -300,6 +338,7 @@ if __name__ == "__main__":
     ax.set_ylim([np.min(state[12:24, :]) - 0.1, np.max(state[12:24, :]) + 0.1])
     ax.set_zlim([np.min(state[12:24, :]) - 0.1, np.max(state[12:24, :]) + 0.1])
 
+
     # labels
     ax.set_xlabel('X Position (m)')
     ax.set_ylabel('Y Position (m)')
@@ -309,6 +348,12 @@ if __name__ == "__main__":
     # initialize scatter plot 
     sc = ax.scatter(np.zeros(5), np.zeros(5), np.zeros(5), c=['k','r', 'g', 'b', 'm'], s=50)
 
-    ani = FuncAnimation(fig, update, frames=len(t), fargs=(leg1, leg2, leg3, leg4, np.array([x,y,z])), interval=50, blit=False)
-    
+    # Initialize cube
+    vertices = get_cube_vertices()
+    faces = get_cube_faces(vertices)
+    cube = Poly3DCollection(faces, color='gray', edgecolor='k', alpha=0.9)
+    ax.add_collection3d(cube)
+
+    ani = FuncAnimation(fig, update, frames=len(t), fargs=(cube, sc, state, leg1, leg2, leg3, leg4), interval=50, blit=False)
     plt.show()
+    
