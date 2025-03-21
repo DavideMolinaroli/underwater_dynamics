@@ -29,22 +29,54 @@ def get_cube_faces(vertices):
     ]
 
 # Function to update both animations
-def update(frame, cube, sc, state):
+def update(frame, cube, sc, state, tau, quivers, ax):
     # Paws in body frame
     leg1 = np.array([state[12,frame],state[13,frame],state[14,frame]])
     leg2 = np.array([state[15,frame],state[16,frame],state[17,frame]])
     leg3 = np.array([state[18,frame],state[19,frame],state[20,frame]])
     leg4 = np.array([state[21,frame],state[22,frame],state[23,frame]])
 
+    I = np.eye(3)
+    S1 = skew_symmetric_matrix(leg1)
+    S2 = skew_symmetric_matrix(leg2)
+    S3 = skew_symmetric_matrix(leg3)
+    S4 = skew_symmetric_matrix(leg4)
+
+    B = np.block([[I,I,I,I],[S1,S2,S3,S4]])
+
+    F = np.linalg.pinv(B)@tau
+
     # Compute rotation matrix
     phi, theta, psi = state[3, frame], state[4, frame], state[5, frame]
     R = rpy_rotation_matrix(phi, theta, psi)
-    
+
+    # Extract forces (each 3 elements form a vector)
+    F1, F2, F3, F4 = F[:3], F[3:6], F[6:9], F[9:12]
+
+    # Transform forces to world frame
+    F1, F2, F3, F4 = R @ F1, R @ F2, R @ F3, R @ F4
+
     # Update scatter points
-    leg1 = R@leg1
-    leg2 = R@leg2
-    leg3 = R@leg3
-    leg4 = R@leg4
+    leg1 = R@leg1 + state[:3, frame] 
+    leg2 = R@leg2 + state[:3, frame] 
+    leg3 = R@leg3 + state[:3, frame] 
+    leg4 = R@leg4 + state[:3, frame] 
+
+    # Update quivers: instead of removing and re-adding, update the references.
+    legs = [leg1, leg2, leg3, leg4]
+    forces = [F1, F2, F3, F4]
+    for i in range(4):
+        # Remove the previous quiver if it exists
+        try:
+            quivers[i].remove()
+        except Exception as e:
+            print("Warning during quiver removal:", e)
+        # Create a new quiver and update the list
+        quivers[i] = ax.quiver(
+            legs[i][0], legs[i][1], legs[i][2],
+            forces[i][0], forces[i][1], forces[i][2],
+            color='r', length=1, normalize=True
+        )
 
     x = [state[0, frame], leg1[0], leg2[0], leg3[0], leg4[0]]
     y = [state[1, frame], leg1[1], leg2[1], leg3[1], leg4[1]]
@@ -59,17 +91,17 @@ def update(frame, cube, sc, state):
     faces = get_cube_faces(vertices)
     cube.set_verts(faces)
     
-    return cube, sc
+    return cube, sc, quivers
 
-def animate_body(state,t):
+def animate_body(state,tau,t):
 # Create figure and 3D axis
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
 
     # axis limits 
-    ax.set_xlim([np.min(state[12:24, :]) - 0.1, np.max(state[12:24, :]) + 0.1])
-    ax.set_ylim([np.min(state[12:24, :]) - 0.1, np.max(state[12:24, :]) + 0.1])
-    ax.set_zlim([np.min(state[12:24, :]) - 0.1, np.max(state[12:24, :]) + 0.1])
+    ax.set_xlim([-3, 3])
+    ax.set_ylim([-3, 3])
+    ax.set_zlim([-2, 2])
 
     # labels
     ax.set_xlabel('X Position (m)')
@@ -86,7 +118,14 @@ def animate_body(state,t):
     cube = Poly3DCollection(faces, color='gray', edgecolor='k', alpha=0.9)
     ax.add_collection3d(cube)
 
-    ani = FuncAnimation(fig, update, frames=len(t), fargs=(cube, sc, state), interval=50, blit=False, repeat=True)
+    quivers = [
+        ax.quiver(0, 0, 0, 0, 0, 0, color='r'),
+        ax.quiver(0, 0, 0, 0, 0, 0, color='r'),
+        ax.quiver(0, 0, 0, 0, 0, 0, color='r'),
+        ax.quiver(0, 0, 0, 0, 0, 0, color='r')
+    ]
+
+    ani = FuncAnimation(fig, update, frames=len(t), fargs=(cube, sc, state, tau, quivers, ax), interval=50, blit=False, repeat=False)
     plt.show()
 
 def plot_signals(state,t):

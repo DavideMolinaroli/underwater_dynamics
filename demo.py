@@ -113,7 +113,7 @@ def underwater_dynamics(t,state,tau, params):
     return np.concatenate((x_dot, q_dot, P_dot))
 
 def simulate_dynamics(t_span, initial_state, tau, params):
-    sol = solve_ivp(underwater_dynamics, t_span, initial_state, args=(tau, params), method='RK45',t_eval=np.linspace(*t_span,100))
+    sol = solve_ivp(underwater_dynamics, t_span, initial_state, args=(tau, params), method='RK45',t_eval=np.linspace(*t_span,1000))
     return sol
 
 if __name__ == "__main__":
@@ -152,11 +152,11 @@ if __name__ == "__main__":
     p2 = np.array([1,-1,-0.5])
     p3 = np.array([-1,-1,-0.5])
     p4 = np.array([-1,1,-0.5])
-    t_span = (0,10)
+    t_span = (0,40)
     initial_state = np.concatenate((np.zeros(12),p1,p2,p3,p4))
     initial_state[3] = 0*np.pi/180
     tau = np.zeros(6)
-    tau[5] = 0.2
+    tau[0] = 1
 
     sol = simulate_dynamics(t_span, initial_state, tau, params)
 
@@ -165,5 +165,5 @@ if __name__ == "__main__":
     state = sol.y
 
     # #print(state[8,:])
-    animate_body(state,t)
+    animate_body(state,tau,t)
     plot_signals(state,t)
