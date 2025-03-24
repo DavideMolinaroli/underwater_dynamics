@@ -2,28 +2,26 @@
 
 ### Current Model
 
-  Considering 
+  Considering
   
-  \vspace{2.5mm}
-  
-  $q = \begin{bmatrix}
+  $$q = \begin{bmatrix}
       v^B_x \\ v^B_y \\ v^B_z \\ \omega^B_x \\ \omega^B_y \\ \omega^B_z
-  \end{bmatrix}$ (linear and angular velocity vectors expressed in body frame)
+  \end{bmatrix}$$ (linear and angular velocity vectors expressed in body frame)
 
   \vspace{2.5mm}
   
-  $\mathbf{x} = \begin{bmatrix}
+  $$\mathbf{x} = \begin{bmatrix}
       x \\ y \\ z \\ \varphi \\ \theta \\ \psi
-  \end{bmatrix}$  (pose expressed in world frame) 
+  \end{bmatrix}$$  (pose expressed in world frame) 
 
   \vspace{2.5mm}
 
-  $p_{ee}^B=\begin{bmatrix}
+  $$p_{ee}^B=\begin{bmatrix}
       p^B_{leg1} \\
       p^B_{leg2} \\
       p^B_{leg3} \\ 
       p^B_{leg4}
-  \end{bmatrix}$ (position of each paw expressed in body frame)
+  \end{bmatrix}$$ (position of each paw expressed in body frame)
 
   \vspace{2.5mm}
 
@@ -31,7 +29,7 @@
 
   \vspace{2.5mm}
 
-  $
+  $$
   \begin{cases}
       \dot{q} =(M_{rb}+M_A)^{-1} (-(C_{rb}({q})+C_A({q}))q - Dq -g+\tau) \\
       \dot{\mathbf{x}} = J(q)q \\
@@ -41,7 +39,7 @@
           [p^B_{leg1}]_{\times} & [p^B_{leg2}]_{\times} & [p^B_{leg3}]_{\times} & [p^B_{leg4}]_{\times} 
       \end{bmatrix} F = B({p}_{ee}^B) F
   \end{cases}
-  $
+  $$
 
   \vspace{2.5mm}
   
