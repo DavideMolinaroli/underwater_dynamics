@@ -4,7 +4,7 @@
 
 Considering:
 
-![Equation](https://latex.codecogs.com/png.latex?q%20%3D%20%5Cbegin%7Bbmatrix%7D%20v%5EB_x%20%5C%5C%20v%5EB_y%20%5C%5C%20v%5EB_z%20%5C%5C%20%5Comega%5EB_x%20%5C%5C%20%5Comega%5EB_y%20%5C%5C%20%5Comega%5EB_z%20%5Cend%7Bbmatrix%7D)
+![Equation](https://latex.codecogs.com/png.latex? \dpi{150}\bg{none} q%20%3D%20%5Cbegin%7Bbmatrix%7D%20v%5EB_x%20%5C%5C%20v%5EB_y%20%5C%5C%20v%5EB_z%20%5C%5C%20%5Comega%5EB_x%20%5C%5C%20%5Comega%5EB_y%20%5C%5C%20%5Comega%5EB_z%20%5Cend%7Bbmatrix%7D)
 
 (linear and angular velocity vectors expressed in the body frame)
 
