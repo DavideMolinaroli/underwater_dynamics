@@ -4,10 +4,11 @@
 
   Considering
   
-  $$q = \begin{bmatrix}
+   ```math
+  q = \begin{bmatrix}
       v^B_x \\ v^B_y \\ v^B_z \\ \omega^B_x \\ \omega^B_y \\ \omega^B_z
   \end{bmatrix}$$ (linear and angular velocity vectors expressed in body frame)\
-  
+  ``` 
   $$\mathbf{x} = \begin{bmatrix}
       x \\ y \\ z \\ \varphi \\ \theta \\ \psi
   \end{bmatrix}$$  (pose expressed in world frame)\
