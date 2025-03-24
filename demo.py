@@ -157,8 +157,10 @@ if __name__ == "__main__":
     initial_state = np.concatenate((np.zeros(12),p1,p2,p3,p4))
     initial_state[3] = 0*np.pi/180
     tau = np.zeros(6)
-    tau[3] = 0.1
-    tau[0] = 1
+
+    # Set desired forces/torque in body frame
+    tau[3] = 0.1 # roll torque
+    tau[0] = 1  # force along x
 
     sol = simulate_dynamics(t_span, initial_state, tau, params)
 
