@@ -102,6 +102,7 @@ def underwater_dynamics(t,state,tau, params):
 
     # q_dot = linear and angular accelerations in body frame
     # x_dot = xyz velocities and rpy rates
+    # P_dot = stack of paws' velocity vectors
     q_dot = np.linalg.inv(M)@(B@F-g_vector-(D+C)@state[6:12])
     x_dot = J@state[6:12]
     P_dot = -2*F/7.83*np.sqrt(7.83/(2*np.linalg.norm(F)))
@@ -152,10 +153,11 @@ if __name__ == "__main__":
     p2 = np.array([1,-1,-0.5])
     p3 = np.array([-1,-1,-0.5])
     p4 = np.array([-1,1,-0.5])
-    t_span = (0,40)
+    t_span = (0,20)
     initial_state = np.concatenate((np.zeros(12),p1,p2,p3,p4))
     initial_state[3] = 0*np.pi/180
     tau = np.zeros(6)
+    tau[3] = 0.1
     tau[0] = 1
 
     sol = simulate_dynamics(t_span, initial_state, tau, params)

@@ -5,7 +5,6 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from algebra_utils import *
 
 def get_cube_vertices():
-    """ Returns the 8 vertices of a unit cube centered at the origin. """
     return np.array([
         [-0.3, -0.3, -0.3],
         [-0.3, -0.3,  0.3],
@@ -18,7 +17,6 @@ def get_cube_vertices():
     ]).T  # Shape (3,8)
 
 def get_cube_faces(vertices):
-    """ Returns faces of the cube given its 8 vertices. """
     return [
         [vertices[:, 0], vertices[:, 1], vertices[:, 3], vertices[:, 2]],
         [vertices[:, 4], vertices[:, 5], vertices[:, 7], vertices[:, 6]],
@@ -28,7 +26,6 @@ def get_cube_faces(vertices):
         [vertices[:, 1], vertices[:, 3], vertices[:, 7], vertices[:, 5]]
     ]
 
-# Function to update both animations
 def update(frame, cube, sc, state, tau, quivers, ax):
     # Paws in body frame
     leg1 = np.array([state[12,frame],state[13,frame],state[14,frame]])
@@ -44,6 +41,7 @@ def update(frame, cube, sc, state, tau, quivers, ax):
 
     B = np.block([[I,I,I,I],[S1,S2,S3,S4]])
 
+    # Compute force from desired torque (everything is expressed in the body frame)
     F = np.linalg.pinv(B)@tau
 
     # Compute rotation matrix
@@ -62,7 +60,7 @@ def update(frame, cube, sc, state, tau, quivers, ax):
     leg3 = R@leg3 + state[:3, frame] 
     leg4 = R@leg4 + state[:3, frame] 
 
-    # Update quivers: instead of removing and re-adding, update the references.
+    # Update arrows
     legs = [leg1, leg2, leg3, leg4]
     forces = [F1, F2, F3, F4]
     for i in range(4):
