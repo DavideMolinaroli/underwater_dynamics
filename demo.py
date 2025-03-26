@@ -98,6 +98,13 @@ def underwater_dynamics(t,state,tau, params):
     B = np.block([[I,I,I,I],[S1,S2,S3,S4]])
 
     F = np.linalg.pinv(B)@tau
+    
+    # Paw velocity
+    v_drag = -2*F/7.83*np.sqrt(7.83/(2*np.linalg.norm(F))) # needed to generate the drag force F
+
+    #v_b_l = np.concatenate((state[6:9],state[6:9],state[6:9],state[6:9],)) # due to body linear velocity
+    #v_b_w = np.concatenate((-S1@state[9:12],-S2@state[9:12],-S3@state[9:12],-S4@state[9:12])) # due to body angular velocity
+
     # print(f'{F.reshape((-1,1))}\n\n')
 
     # q_dot = linear and angular accelerations in body frame
@@ -105,7 +112,7 @@ def underwater_dynamics(t,state,tau, params):
     # P_dot = stack of paws' velocity vectors
     q_dot = np.linalg.inv(M)@(B@F-g_vector-(D+C)@state[6:12])
     x_dot = J@state[6:12]
-    P_dot = -2*F/7.83*np.sqrt(7.83/(2*np.linalg.norm(F)))
+    P_dot = v_drag
 
     print(np.linalg.norm(P_dot))
 
@@ -159,8 +166,8 @@ if __name__ == "__main__":
     tau = np.zeros(6)
 
     # Set desired forces/torque in body frame
-    tau[3] = 0.1 # roll torque
-    tau[0] = 1  # force along x
+    tau[3] = 0.5
+    tau[0] = 2
 
     sol = simulate_dynamics(t_span, initial_state, tau, params)
 
@@ -169,5 +176,5 @@ if __name__ == "__main__":
     state = sol.y
 
     # #print(state[8,:])
-    animate_body(state,tau,t)
+    animate_body(state,tau,t, ref_frame='world')
     plot_signals(state,t)

@@ -26,7 +26,7 @@ def get_cube_faces(vertices):
         [vertices[:, 1], vertices[:, 3], vertices[:, 7], vertices[:, 5]]
     ]
 
-def update(frame, cube, sc, state, tau, quivers, ax):
+def update(frame, cube, sc, state, tau, quivers, lines, ax, ref_frame):
     # Paws in body frame
     leg1 = np.array([state[12,frame],state[13,frame],state[14,frame]])
     leg2 = np.array([state[15,frame],state[16,frame],state[17,frame]])
@@ -52,13 +52,14 @@ def update(frame, cube, sc, state, tau, quivers, ax):
     F1, F2, F3, F4 = F[:3], F[3:6], F[6:9], F[9:12]
 
     # Transform forces to world frame
-    F1, F2, F3, F4 = R @ F1, R @ F2, R @ F3, R @ F4
 
-    # Update scatter points
-    leg1 = R@leg1 + state[:3, frame] 
-    leg2 = R@leg2 + state[:3, frame] 
-    leg3 = R@leg3 + state[:3, frame] 
-    leg4 = R@leg4 + state[:3, frame] 
+    if ref_frame == 'world':
+        F1, F2, F3, F4 = R @ F1, R @ F2, R @ F3, R @ F4
+        # Update scatter points
+        leg1 = R@leg1 
+        leg2 = R@leg2 
+        leg3 = R@leg3 
+        leg4 = R@leg4 
 
     # Update arrows
     legs = [leg1, leg2, leg3, leg4]
@@ -76,23 +77,42 @@ def update(frame, cube, sc, state, tau, quivers, ax):
             color='r', length=1, normalize=True
         )
 
-    x = [state[0, frame], leg1[0], leg2[0], leg3[0], leg4[0]]
-    y = [state[1, frame], leg1[1], leg2[1], leg3[1], leg4[1]]
-    z = [state[2, frame], leg1[2], leg2[2], leg3[2], leg4[2]]
+    com = [0,0,0]
+    if ref_frame == 'world':
+        com = [state[0, frame],state[1, frame],state[2, frame]]
+
+    x = [com[0], leg1[0], leg2[0], leg3[0], leg4[0]]
+    y = [com[1], leg1[1], leg2[1], leg3[1], leg4[1]]
+    z = [com[2], leg1[2], leg2[2], leg3[2], leg4[2]]
     sc._offsets3d = (x, y, z)
-    
-    # Transform cube vertices
-    vertices = (R @ get_cube_vertices())  # Apply rotation, shape (8,3)
-    vertices = vertices + state[:3, frame].reshape(3, 1) 
-    
+
+    vertices = get_cube_vertices()
+    if ref_frame == 'world': 
+        # Transform cube vertices
+        vertices = (R @ vertices)  # Apply rotation, shape (8,3)
+        vertices = vertices + state[:3, frame].reshape(3, 1) 
+
     # Update cube faces
     faces = get_cube_faces(vertices)
     cube.set_verts(faces)
-    
-    return cube, sc, quivers
 
-def animate_body(state,tau,t):
-# Create figure and 3D axis
+    # 0,2,4,6 are the bottom vertices
+    # 6 -> leg1, 4-> leg2, 2-> leg4, 0->leg3
+    remap_indices = [6,4,0,2]
+    for i, leg in enumerate(legs):
+        try:
+            lines[i].remove()
+        except Exception as e:
+            print("Warning during line removal:", e)
+        
+        vertex_index = remap_indices[i]
+        vertex = vertices[:,vertex_index]
+        lines[i], = ax.plot([leg[0], vertex[0]],[leg[1], vertex[1]],[leg[2], vertex[2]],color='k',linestyle='-') 
+    
+    return cube, sc, quivers, lines
+
+def animate_body(state,tau,t, ref_frame='world'):
+    # Create figure and 3D axis
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
 
@@ -113,7 +133,7 @@ def animate_body(state,tau,t):
     # Initialize cube
     vertices = get_cube_vertices()
     faces = get_cube_faces(vertices)
-    cube = Poly3DCollection(faces, color='gray', edgecolor='k', alpha=0.9)
+    cube = Poly3DCollection(faces, color='gray', edgecolor='k', alpha=0.3)
     ax.add_collection3d(cube)
 
     quivers = [
@@ -123,7 +143,14 @@ def animate_body(state,tau,t):
         ax.quiver(0, 0, 0, 0, 0, 0, color='r')
     ]
 
-    ani = FuncAnimation(fig, update, frames=len(t), fargs=(cube, sc, state, tau, quivers, ax), interval=50, blit=False, repeat=False)
+    l0, = ax.plot([0, 0],[0,0],[0,0])
+    l1, = ax.plot([0, 0],[0,0],[0,0])
+    l2, = ax.plot([0, 0],[0,0],[0,0])
+    l3, = ax.plot([0, 0],[0,0],[0,0])
+
+    lines = [l0,l1,l2,l3]
+
+    ani = FuncAnimation(fig, update, frames=len(t), fargs=(cube, sc, state, tau, quivers, lines, ax, ref_frame), interval=50, blit=False, repeat=False)
     plt.show()
 
 def plot_signals(state,t):
