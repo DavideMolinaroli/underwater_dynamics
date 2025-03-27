@@ -178,5 +178,5 @@ if __name__ == "__main__":
     state = sol.y
 
     # #print(state[8,:])
-    animate_body(state,tau,t, ref_frame='body')
+    animate_body(state,tau,t, ref_frame='world')
     plot_signals(state,t)

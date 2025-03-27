@@ -150,6 +150,7 @@ def animate_body(state,tau,t, ref_frame='world'):
     lines = [l0,l1,l2,l3]
 
     ani = FuncAnimation(fig, update, frames=len(t), fargs=(cube, sc, state, tau, quivers, lines, ax, ref_frame), interval=50, blit=False, repeat=False)
+    # ani.save('animation.gif', writer='imagemagick', fps=30)
     plt.show()
 
 def plot_signals(state,t):
