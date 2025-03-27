@@ -21,7 +21,7 @@ def underwater_dynamics(t,state,tau, params):
     u,v,w = state[6:9]
     p,q,r = state[9:12]
 
-    # paws positions
+    # paws positions in world frame
     P = state[12:24]
 
     # Inertial params + buoyancy
@@ -84,10 +84,11 @@ def underwater_dynamics(t,state,tau, params):
     g_torque = np.zeros(3)
     g_vector = np.concatenate((g_force,g_torque))
 
-    p1 = P[0:3]
-    p2 = P[3:6]
-    p3 = P[6:9]
-    p4 = P[9:]
+    # paws in body frame to apply torque
+    p1 = R.T@P[0:3]
+    p2 = R.T@P[3:6]
+    p3 = R.T@P[6:9]
+    p4 = R.T@P[9:]
 
     I = np.eye(3)
     S1 = skew_symmetric_matrix(p1)
@@ -109,10 +110,10 @@ def underwater_dynamics(t,state,tau, params):
 
     # q_dot = linear and angular accelerations in body frame
     # x_dot = xyz velocities and rpy rates
-    # P_dot = stack of paws' velocity vectors
+    # P_dot = stack of paws' velocity vectors in world frame
     q_dot = np.linalg.inv(M)@(B@F-g_vector-(D+C)@state[6:12])
     x_dot = J@state[6:12]
-    P_dot = v_drag
+    P_dot = block_diag(R,R,R,R)@v_drag
 
     print(np.linalg.norm(P_dot))
 
@@ -156,6 +157,7 @@ if __name__ == "__main__":
     params = np.array([inertial_params, added_mass_params, damping_coeffs], dtype=object)
     
     # Initial paws config in body frame
+    # TODO: rotate by initial state
     p1 = np.array([1,1,-0.5])
     p2 = np.array([1,-1,-0.5])
     p3 = np.array([-1,-1,-0.5])
@@ -166,8 +168,8 @@ if __name__ == "__main__":
     tau = np.zeros(6)
 
     # Set desired forces/torque in body frame
-    tau[3] = 0.5
-    tau[0] = 2
+    tau[3] = 0.1
+    tau[0] = 0
 
     sol = simulate_dynamics(t_span, initial_state, tau, params)
 
@@ -176,5 +178,5 @@ if __name__ == "__main__":
     state = sol.y
 
     # #print(state[8,:])
-    animate_body(state,tau,t, ref_frame='world')
+    animate_body(state,tau,t, ref_frame='body')
     plot_signals(state,t)

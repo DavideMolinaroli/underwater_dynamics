@@ -27,11 +27,15 @@ def get_cube_faces(vertices):
     ]
 
 def update(frame, cube, sc, state, tau, quivers, lines, ax, ref_frame):
+    # Compute rotation matrix
+    phi, theta, psi = state[3, frame], state[4, frame], state[5, frame]
+    R = rpy_rotation_matrix(phi, theta, psi)
+    
     # Paws in body frame
-    leg1 = np.array([state[12,frame],state[13,frame],state[14,frame]])
-    leg2 = np.array([state[15,frame],state[16,frame],state[17,frame]])
-    leg3 = np.array([state[18,frame],state[19,frame],state[20,frame]])
-    leg4 = np.array([state[21,frame],state[22,frame],state[23,frame]])
+    leg1 = R.T @np.array([state[12,frame],state[13,frame],state[14,frame]])
+    leg2 = R.T @np.array([state[15,frame],state[16,frame],state[17,frame]])
+    leg3 = R.T @np.array([state[18,frame],state[19,frame],state[20,frame]])
+    leg4 = R.T @np.array([state[21,frame],state[22,frame],state[23,frame]])
 
     I = np.eye(3)
     S1 = skew_symmetric_matrix(leg1)
@@ -44,22 +48,13 @@ def update(frame, cube, sc, state, tau, quivers, lines, ax, ref_frame):
     # Compute force from desired torque (everything is expressed in the body frame)
     F = np.linalg.pinv(B)@tau
 
-    # Compute rotation matrix
-    phi, theta, psi = state[3, frame], state[4, frame], state[5, frame]
-    R = rpy_rotation_matrix(phi, theta, psi)
-
-    # Extract forces (each 3 elements form a vector)
+    # Extract forces 
     F1, F2, F3, F4 = F[:3], F[3:6], F[6:9], F[9:12]
 
-    # Transform forces to world frame
-
+    # Transform to world frame if desired
     if ref_frame == 'world':
         F1, F2, F3, F4 = R @ F1, R @ F2, R @ F3, R @ F4
-        # Update scatter points
-        leg1 = R@leg1 
-        leg2 = R@leg2 
-        leg3 = R@leg3 
-        leg4 = R@leg4 
+        leg1, leg2, leg3, leg4 = R@leg1, R@leg2, R@leg3, R@leg4 
 
     # Update arrows
     legs = [leg1, leg2, leg3, leg4]
@@ -86,11 +81,13 @@ def update(frame, cube, sc, state, tau, quivers, lines, ax, ref_frame):
     z = [com[2], leg1[2], leg2[2], leg3[2], leg4[2]]
     sc._offsets3d = (x, y, z)
 
-    vertices = get_cube_vertices()
+    vertices_body = get_cube_vertices()
     if ref_frame == 'world': 
         # Transform cube vertices
-        vertices = (R @ vertices)  # Apply rotation, shape (8,3)
-        vertices = vertices + state[:3, frame].reshape(3, 1) 
+        vertices = (R @ vertices_body)  # Apply rotation
+        vertices = vertices + state[:3, frame].reshape(3, 1)
+    else:
+        vertices = vertices_body
 
     # Update cube faces
     faces = get_cube_faces(vertices)
@@ -99,6 +96,8 @@ def update(frame, cube, sc, state, tau, quivers, lines, ax, ref_frame):
     # 0,2,4,6 are the bottom vertices
     # 6 -> leg1, 4-> leg2, 2-> leg4, 0->leg3
     remap_indices = [6,4,0,2]
+    vertices_body[2,:] = vertices_body[2,:]+0.3
+    midpoints = R@vertices_body
     for i, leg in enumerate(legs):
         try:
             lines[i].remove()
@@ -106,7 +105,7 @@ def update(frame, cube, sc, state, tau, quivers, lines, ax, ref_frame):
             print("Warning during line removal:", e)
         
         vertex_index = remap_indices[i]
-        vertex = vertices[:,vertex_index]
+        vertex = midpoints[:,vertex_index]
         lines[i], = ax.plot([leg[0], vertex[0]],[leg[1], vertex[1]],[leg[2], vertex[2]],color='k',linestyle='-') 
     
     return cube, sc, quivers, lines
